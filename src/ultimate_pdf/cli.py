@@ -1,5 +1,7 @@
 import typer
 
+from ultimate_pdf.commands.merge import merge
+
 app = typer.Typer()
 
 
@@ -12,7 +14,10 @@ def main():
 @app.command()
 def version():
     """Show the current version."""
-    print("Ultimate PDF v0.1.0")
+    typer.echo("Ultimate PDF v0.1.0")
+
+
+app.command()(merge)
 
 
 if __name__ == "__main__":
