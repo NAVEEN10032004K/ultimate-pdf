@@ -63,17 +63,25 @@ def split_page_range(
         reader = PdfReader(input_file)
         total_pages = len(reader.pages)
 
-        if start_page < 1 or end_page > total_pages or start_page > end_page:
+        if start_page < 1:
             raise PageRangeError(
-                f"Invalid page range: {start_page}-{end_page}. "
-                f"PDF contains {total_pages} pages."
+                "Start page must be greater than or equal to 1."
             )
 
-    if end_page > total_pages:
-        raise ValueError(f"End page ({end_page}) exceeds total pages ({total_pages}).")
+        if end_page > total_pages:
+            raise PageRangeError(
+                f"End page ({end_page}) exceeds total pages ({total_pages})."
+            )
 
-    if start_page > end_page:
-        raise ValueError("Start page cannot be greater than end page.")
+        if start_page > end_page:
+            raise PageRangeError(
+                "Start page cannot be greater than end page."
+            )
+
+        writer = PdfWriter()
+
+        for page in range(start_page - 1, end_page):
+            writer.add_page(reader.pages[page])
 
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -147,7 +155,6 @@ def split_every_n_pages(
         ) from e
 
 
-
 def split_selected_pages(
     input_file: Path,
     selected_pages: list[int],
@@ -191,4 +198,7 @@ def split_selected_pages(
             f"Unable to write output file '{output_file}'."
         ) from e
 
-    writer.close()
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to extract selected pages: {e}"
+        ) from e
