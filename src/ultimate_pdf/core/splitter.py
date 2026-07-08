@@ -66,14 +66,10 @@ def split_page_range(
         raise ValueError("Start page must be greater than 0.")
 
     if end_page > total_pages:
-        raise ValueError(
-            f"End page ({end_page}) exceeds total pages ({total_pages})."
-        )
+        raise ValueError(f"End page ({end_page}) exceeds total pages ({total_pages}).")
 
     if start_page > end_page:
-        raise ValueError(
-            "Start page cannot be greater than end page."
-        )
+        raise ValueError("Start page cannot be greater than end page.")
 
     writer = PdfWriter()
 
@@ -132,6 +128,7 @@ def split_every_n_pages(
         file_count += 1
 
     return file_count
+
 
 def split_selected_pages(
     input_file: Path,
