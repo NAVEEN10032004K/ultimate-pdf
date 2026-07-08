@@ -2,6 +2,10 @@ from pathlib import Path
 
 from pypdf import PdfWriter
 
+from ultimate_pdf.core.exceptions import (
+    OutputFileError,
+    PDFOperationError,
+)
 from ultimate_pdf.core.validator import validate_pdf_list
 
 
@@ -14,9 +18,11 @@ def merge_pdfs(input_files: list[Path], output: Path) -> None:
         output: Output PDF file path.
 
     Raises:
-        FileNotFoundError: If any input file does not exist.
-        ValueError: If the input list is empty or contains invalid files.
-        Exception: Any error raised by pypdf while merging.
+        EmptyInputError: If no input files are provided.
+        PDFNotFoundError: If an input file does not exist.
+        InvalidPDFError: If an input file is not a valid PDF.
+        OutputFileError: If the output file cannot be created.
+        PDFOperationError: If the merge operation fails.
     """
 
     # Validate all input files
@@ -25,6 +31,7 @@ def merge_pdfs(input_files: list[Path], output: Path) -> None:
     writer = PdfWriter()
 
     try:
+        # Append all input PDFs
         for pdf in input_files:
             writer.append(str(pdf))
 
@@ -32,8 +39,18 @@ def merge_pdfs(input_files: list[Path], output: Path) -> None:
         output.parent.mkdir(parents=True, exist_ok=True)
 
         # Write the merged PDF
-        with open(output, "wb") as merged_pdf:
+        with output.open("wb") as merged_pdf:
             writer.write(merged_pdf)
+
+    except OSError as e:
+        raise OutputFileError(
+            f"Unable to create output file: {output}"
+        ) from e
+
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to merge PDF files: {e}"
+        ) from e
 
     finally:
         writer.close()
