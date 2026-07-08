@@ -1,0 +1,4 @@
+- Added PDF parser module.
+- Added PDF metadata extraction.
+- Added text extraction utilities.
+- Added `info` CLI command.

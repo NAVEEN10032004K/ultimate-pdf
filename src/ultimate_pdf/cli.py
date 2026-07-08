@@ -2,7 +2,8 @@ import typer
 
 from ultimate_pdf.commands.merge import merge
 from ultimate_pdf.commands.split import split
-from ultimate_pdf.commands.compress import compress
+from ultimate_pdf.commands.info import info  # new: added info command
+
 app = typer.Typer()
 
 
@@ -20,7 +21,7 @@ def version():
 
 app.command()(merge)
 app.command()(split)
-app.command()(compress)
+app.command()(info)  # new: registered info command with the CLI
 
 if __name__ == "__main__":
     app()

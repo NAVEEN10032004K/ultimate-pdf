@@ -61,9 +61,7 @@ def split(
         if pages:
 
             if output is None:
-                raise typer.BadParameter(
-                    "--output is required when using --pages."
-                )
+                raise typer.BadParameter("--output is required when using --pages.")
 
             try:
                 start, end = map(int, pages.split("-"))
@@ -103,19 +101,9 @@ def split(
         if select:
 
             if output is None:
-                raise typer.BadParameter(
-                    "--output is required when using --select."
-                )
+                raise typer.BadParameter("--output is required when using --select.")
 
-            try:
-                selected_pages = [
-                    int(page.strip())
-                    for page in select.split(",")
-                ]
-            except ValueError:
-                raise typer.BadParameter(
-                    "Selected pages must be comma-separated integers (example: 1,3,8)."
-                )
+            selected_pages = [int(page.strip()) for page in select.split(",")]
 
             split_selected_pages(
                 input_file,
