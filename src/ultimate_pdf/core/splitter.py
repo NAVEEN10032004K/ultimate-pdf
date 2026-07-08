@@ -2,6 +2,11 @@ from pathlib import Path
 
 from pypdf import PdfReader, PdfWriter
 
+from ultimate_pdf.core.exceptions import (
+    OutputFileError,
+    PDFOperationError,
+    PageRangeError,
+)
 from ultimate_pdf.core.validator import validate_pdf
 
 
@@ -9,32 +14,38 @@ def split_to_pages(input_file: Path) -> int:
     """
     Split a PDF into individual pages.
 
-    Args:
-        input_file: Path to the input PDF.
-
     Returns:
         Number of PDF files created.
     """
-
     validate_pdf(input_file)
 
-    reader = PdfReader(str(input_file))
+    output_dir = input_file.parent / f"{input_file.stem}_pages"
 
-    output_dir = input_file.parent / input_file.stem
-    output_dir.mkdir(exist_ok=True)
+    try:
+        reader = PdfReader(input_file)
 
-    for page_number, page in enumerate(reader.pages, start=1):
-        writer = PdfWriter()
-        writer.add_page(page)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        output_file = output_dir / f"{input_file.stem}_page_{page_number}.pdf"
+        for page_number, page in enumerate(reader.pages, start=1):
+            writer = PdfWriter()
+            writer.add_page(page)
 
-        with output_file.open("wb") as pdf:
-            writer.write(pdf)
+            output_file = output_dir / f"page_{page_number}.pdf"
 
-        writer.close()
+            with output_file.open("wb") as f:
+                writer.write(f)
 
-    return len(reader.pages)
+        return len(reader.pages)
+
+    except OSError as e:
+        raise OutputFileError(
+            f"Unable to write output files to '{output_dir}'."
+        ) from e
+
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to split PDF: {e}"
+        ) from e
 
 
 def split_page_range(
@@ -44,51 +55,42 @@ def split_page_range(
     output_file: Path,
 ) -> None:
     """
-    Extract a page range from a PDF into a new PDF.
-
-    Args:
-        input_file: Source PDF.
-        start_page: First page (1-based).
-        end_page: Last page (1-based).
-        output_file: Output PDF.
-
-    Raises:
-        ValueError: If the page range is invalid.
+    Extract a page range into a new PDF.
     """
-
     validate_pdf(input_file)
 
-    reader = PdfReader(str(input_file))
-    total_pages = len(reader.pages)
-
-    # Validate page numbers
-    if start_page < 1:
-        raise ValueError("Start page must be greater than 0.")
-
-    if end_page > total_pages:
-        raise ValueError(
-            f"End page ({end_page}) exceeds total pages ({total_pages})."
-        )
-
-    if start_page > end_page:
-        raise ValueError(
-            "Start page cannot be greater than end page."
-        )
-
-    writer = PdfWriter()
-
     try:
-        # Convert to zero-based indexing
-        for page_number in range(start_page - 1, end_page):
-            writer.add_page(reader.pages[page_number])
+        reader = PdfReader(input_file)
+        total_pages = len(reader.pages)
+
+        if start_page < 1 or end_page > total_pages or start_page > end_page:
+            raise PageRangeError(
+                f"Invalid page range: {start_page}-{end_page}. "
+                f"PDF contains {total_pages} pages."
+            )
+
+        writer = PdfWriter()
+
+        for page in range(start_page - 1, end_page):
+            writer.add_page(reader.pages[page])
 
         output_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with output_file.open("wb") as pdf:
-            writer.write(pdf)
+        with output_file.open("wb") as f:
+            writer.write(f)
 
-    finally:
-        writer.close()
+    except PageRangeError:
+        raise
+
+    except OSError as e:
+        raise OutputFileError(
+            f"Unable to write output file '{output_file}'."
+        ) from e
+
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to extract page range: {e}"
+        ) from e
 
 
 def split_every_n_pages(
@@ -96,71 +98,98 @@ def split_every_n_pages(
     pages_per_file: int,
 ) -> int:
     """
-    Split a PDF into multiple PDFs with a fixed number of pages.
+    Split a PDF into multiple PDFs containing N pages each.
 
     Returns:
         Number of PDF files created.
     """
-
     validate_pdf(input_file)
 
     if pages_per_file <= 0:
-        raise ValueError("Pages per file must be greater than 0.")
+        raise PageRangeError(
+            "Pages per file must be greater than zero."
+        )
 
-    reader = PdfReader(str(input_file))
-    total_pages = len(reader.pages)
+    output_dir = input_file.parent / f"{input_file.stem}_split"
 
-    output_dir = input_file.parent / input_file.stem
-    output_dir.mkdir(exist_ok=True)
+    try:
+        reader = PdfReader(input_file)
+        total_pages = len(reader.pages)
 
-    file_count = 0
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-    for start in range(0, total_pages, pages_per_file):
-        writer = PdfWriter()
+        file_number = 1
 
-        end = min(start + pages_per_file, total_pages)
+        for start in range(0, total_pages, pages_per_file):
+            writer = PdfWriter()
 
-        for page in range(start, end):
-            writer.add_page(reader.pages[page])
+            for page in range(start, min(start + pages_per_file, total_pages)):
+                writer.add_page(reader.pages[page])
 
-        output_file = output_dir / f"{input_file.stem}_part_{file_count + 1}.pdf"
+            output_file = output_dir / f"part_{file_number}.pdf"
 
-        with output_file.open("wb") as pdf:
-            writer.write(pdf)
+            with output_file.open("wb") as f:
+                writer.write(f)
 
-        writer.close()
-        file_count += 1
+            file_number += 1
 
-    return file_count
+        return file_number - 1
+
+    except OSError as e:
+        raise OutputFileError(
+            f"Unable to write output files to '{output_dir}'."
+        ) from e
+
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to split PDF: {e}"
+        ) from e
+
 
 def split_selected_pages(
     input_file: Path,
-    pages: list[int],
+    selected_pages: list[int],
     output_file: Path,
 ) -> None:
     """
     Extract selected pages into a new PDF.
     """
-
     validate_pdf(input_file)
 
-    reader = PdfReader(str(input_file))
-    total_pages = len(reader.pages)
+    try:
+        reader = PdfReader(input_file)
+        total_pages = len(reader.pages)
 
-    writer = PdfWriter()
-
-    for page in pages:
-
-        if page < 1 or page > total_pages:
-            raise ValueError(
-                f"Page {page} is out of range. PDF has {total_pages} pages."
+        if not selected_pages:
+            raise PageRangeError(
+                "At least one page must be selected."
             )
 
-        writer.add_page(reader.pages[page - 1])
+        writer = PdfWriter()
 
-    output_file.parent.mkdir(parents=True, exist_ok=True)
+        for page in selected_pages:
+            if page < 1 or page > total_pages:
+                raise PageRangeError(
+                    f"Page {page} is out of range. "
+                    f"PDF contains {total_pages} pages."
+                )
 
-    with output_file.open("wb") as pdf:
-        writer.write(pdf)
+            writer.add_page(reader.pages[page - 1])
 
-    writer.close()
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+
+        with output_file.open("wb") as f:
+            writer.write(f)
+
+    except PageRangeError:
+        raise
+
+    except OSError as e:
+        raise OutputFileError(
+            f"Unable to write output file '{output_file}'."
+        ) from e
+
+    except Exception as e:
+        raise PDFOperationError(
+            f"Failed to extract selected pages: {e}"
+        ) from e

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import typer
 
+from ultimate_pdf.core.exceptions import UltimatePDFError
 from ultimate_pdf.core.splitter import (
     split_every_n_pages,
     split_page_range,
@@ -64,7 +65,12 @@ def split(
                     "--output is required when using --pages."
                 )
 
-            start, end = map(int, pages.split("-"))
+            try:
+                start, end = map(int, pages.split("-"))
+            except ValueError:
+                raise typer.BadParameter(
+                    "Page range must be in the format START-END (example: 5-10)."
+                )
 
             split_page_range(
                 input_file,
@@ -80,7 +86,7 @@ def split(
             return
 
         # Split every N pages
-        if every:
+        if every is not None:
 
             files = split_every_n_pages(
                 input_file,
@@ -101,10 +107,15 @@ def split(
                     "--output is required when using --select."
                 )
 
-            selected_pages = [
-                int(page.strip())
-                for page in select.split(",")
-            ]
+            try:
+                selected_pages = [
+                    int(page.strip())
+                    for page in select.split(",")
+                ]
+            except ValueError:
+                raise typer.BadParameter(
+                    "Selected pages must be comma-separated integers (example: 1,3,8)."
+                )
 
             split_selected_pages(
                 input_file,
@@ -117,7 +128,14 @@ def split(
                 fg=typer.colors.GREEN,
             )
 
-    except Exception as e:
+    except typer.BadParameter as e:
+        typer.secho(
+            f"❌ {e}",
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(code=1)
+
+    except UltimatePDFError as e:
         typer.secho(
             f"❌ {e}",
             fg=typer.colors.RED,
