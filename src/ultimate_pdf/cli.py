@@ -2,7 +2,7 @@ import typer
 
 from ultimate_pdf.commands.merge import merge
 from ultimate_pdf.commands.split import split
-from ultimate_pdf.commands.info import info  
+from ultimate_pdf.commands.info import info
 from ultimate_pdf.commands.encrypt import encrypt
 from ultimate_pdf.commands.decrypt import decrypt
 
@@ -23,7 +23,7 @@ def version():
 
 app.command()(merge)
 app.command()(split)
-app.command()(info)  
+app.command()(info)
 app.command()(encrypt)
 app.command()(decrypt)
 
