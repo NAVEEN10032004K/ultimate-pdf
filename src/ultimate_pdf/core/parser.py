@@ -153,7 +153,7 @@ def search_text(input_file: Path, query: str) -> list[int]:
     """
     reader = _get_reader(input_file)
 
-    mmatches: list[int] = []
+    matches: list[int] = []
 
     query = query.lower()
 
