@@ -2,6 +2,8 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+import logging
+logging.getLogger("pypdf").setLevel(logging.ERROR)
 from ultimate_pdf.core.validator import validate_pdf_list
 
 
