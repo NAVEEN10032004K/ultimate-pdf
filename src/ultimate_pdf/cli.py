@@ -2,7 +2,9 @@ import typer
 
 from ultimate_pdf.commands.merge import merge
 from ultimate_pdf.commands.split import split
-from ultimate_pdf.commands.info import info  # new: added info command
+from ultimate_pdf.commands.info import info  
+from ultimate_pdf.commands.encrypt import encrypt
+from ultimate_pdf.commands.decrypt import decrypt
 
 app = typer.Typer()
 
@@ -21,7 +23,9 @@ def version():
 
 app.command()(merge)
 app.command()(split)
-app.command()(info)  # new: registered info command with the CLI
+app.command()(info)  
+app.command()(encrypt)
+app.command()(decrypt)
 
 if __name__ == "__main__":
     app()
