@@ -23,7 +23,9 @@ def decrypt(
         help="Output decrypted PDF.",
     ),
 ):
-
+    """
+    Decrypt a PDF using password of an encrypted file.
+    """
 
     try:
         decrypt_pdf(
