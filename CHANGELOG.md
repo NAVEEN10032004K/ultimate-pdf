@@ -1,4 +1,4 @@
-## 0.2.0
+## 1.0.0
 
 - Added `pdf-to-image` command (render pages to images).
 - Added `image-to-pdf` command (combine images into a PDF).
