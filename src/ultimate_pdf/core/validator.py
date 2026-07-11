@@ -4,9 +4,19 @@ from ultimate_pdf.core.exceptions import (
     EmptyInputError,
     InvalidPDFError,
     PDFNotFoundError,
+    UnsupportedFormatError,
 )
 
 SUPPORTED_PDF_EXTENSION = ".pdf"
+SUPPORTED_IMAGE_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".tif",
+    ".tiff",
+    ".bmp",
+    ".gif",
+}
 
 
 def validate_file_exists(file_path: Path) -> None:
@@ -52,3 +62,16 @@ def validate_pdf_list(files: list[Path]) -> None:
 
     for file in files:
         validate_pdf(file)
+
+
+def validate_image(file_path: Path) -> None:
+    """
+    Validate that the file exists and has a supported image extension.
+    """
+    validate_file_exists(file_path)
+
+    if file_path.suffix.lower() not in SUPPORTED_IMAGE_EXTENSIONS:
+        raise UnsupportedFormatError(
+            f"'{file_path.name}' is not a supported image "
+            f"({', '.join(sorted(SUPPORTED_IMAGE_EXTENSIONS))})."
+        )

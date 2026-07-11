@@ -9,6 +9,11 @@ from ultimate_pdf.commands.encrypt import encrypt
 from ultimate_pdf.commands.decrypt import decrypt
 from ultimate_pdf.commands.rotate import rotate
 from ultimate_pdf.commands.compress import compress
+from ultimate_pdf.commands.pdf_to_image import pdf_to_image
+from ultimate_pdf.commands.image_to_pdf import image_to_pdf
+from ultimate_pdf.commands.watermark import watermark
+from ultimate_pdf.commands.ocr import ocr
+from ultimate_pdf.commands.markdown import markdown
 
 app = typer.Typer()
 
@@ -32,6 +37,11 @@ app.command()(encrypt)
 app.command()(decrypt)
 app.command()(rotate)
 app.command()(compress)
+app.command()(pdf_to_image)
+app.command()(image_to_pdf)
+app.command()(watermark)
+app.command()(ocr)
+app.command()(markdown)
 
 if __name__ == "__main__":
     app()
