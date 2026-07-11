@@ -17,11 +17,9 @@ authors = [
 keywords = [
     "pdf",
     "python",
-    "ocr",
     "merge",
     "split",
     "compress",
-    "watermark",
     "cli"
 ]
 
