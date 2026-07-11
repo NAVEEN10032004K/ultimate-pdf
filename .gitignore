@@ -1,31 +1,71 @@
 # Virtual Environment
 .venv/
 venv/
+env/
+ENV/
 
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
+.Python
 
-# Build
+# Build / packaging
 build/
 dist/
 *.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
 
-# Testing
+# Testing / coverage
 .pytest_cache/
+.tox/
+.nox/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
+.hypothesis/
 
-# IDE
+# Linters / type checkers / caches
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.cache/
+
+# IDE / editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# macOS
+# OS
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
 
-# PDFs (test/scratch files)
+# PDFs (test/scratch output)
 *.pdf
+
+# Images (test/scratch output)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.webp
+*.svg
+
+# Generated split/rotate output dirs
+*_pages/
+*_split/
+*_compressed.pdf
