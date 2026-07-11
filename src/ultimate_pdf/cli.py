@@ -1,3 +1,5 @@
+from importlib.metadata import version as _pkg_version
+
 import typer
 
 from ultimate_pdf.commands.merge import merge
@@ -20,7 +22,7 @@ def main():
 @app.command()
 def version():
     """Show the current version."""
-    typer.echo("Ultimate PDF v0.1.0")
+    typer.echo(f"Ultimate PDF v{_pkg_version('ultimate-pdf')}")
 
 
 app.command()(merge)
