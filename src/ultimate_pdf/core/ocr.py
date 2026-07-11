@@ -89,6 +89,13 @@ def ocr_pdf(
         raise OutputFileError(f"Unable to write output file '{output_file}'.") from exc
     except Exception as exc:
         # PyMuPDF raises RuntimeError when Tesseract/tessdata is unavailable.
+        message = str(exc).lower()
+        if "language" in message or "traineddata" in message or "tessdata" in message:
+            raise PDFOperationError(
+                f"OCR failed: Tesseract could not load language '{language}'. "
+                f"Install the language pack (e.g. 'apt install tesseract-ocr-{language}' "
+                "or 'brew install tesseract-lang'), or set TESSDATA_PREFIX to your tessdata directory."
+            ) from exc
         raise PDFOperationError(f"OCR failed: {exc}. {_TESSERACT_HINT}") from exc
     finally:
         if out is not None:

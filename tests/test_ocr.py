@@ -51,6 +51,14 @@ def test_ocr_pdf_mode(scanned_pdf, tmp_path):
     assert "HELLO" in reader.pages[0].extract_text().upper()
 
 
+@tesseract
+def test_missing_language_pack(scanned_pdf):
+    """An uninstalled language should give a language-specific error, not a generic one."""
+    with pytest.raises(PDFOperationError) as exc:
+        ocr_pdf(scanned_pdf, mode="text", language="zzz")
+    assert "language 'zzz'" in str(exc.value)
+
+
 def test_pdf_mode_requires_output(scanned_pdf):
     with pytest.raises(PDFOperationError):
         ocr_pdf(scanned_pdf, mode="pdf")
