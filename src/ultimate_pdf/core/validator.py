@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from pypdf import PdfReader
 from ultimate_pdf.core.exceptions import (
     EmptyInputError,
     InvalidPDFError,
@@ -33,6 +33,13 @@ def validate_pdf(file_path: Path) -> None:
     """
     validate_file_exists(file_path)
     validate_pdf_extension(file_path)
+
+    try:
+        PdfReader(str(file_path))
+    except Exception as exc:
+        raise InvalidPDFError(
+            f"'{file_path}' is not a valid PDF file."
+        ) from exc
 
 
 def validate_pdf_list(files: list[Path]) -> None:

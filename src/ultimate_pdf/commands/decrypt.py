@@ -2,7 +2,8 @@ from pathlib import Path
 
 import typer
 
-from ultimate_pdf.core.encryptor import decrypt_pdf
+from ultimate_pdf.core.encryptor_decryptor import decrypt_pdf
+from ultimate_pdf.core.exceptions import UltimatePDFError
 
 
 def decrypt(
@@ -24,9 +25,8 @@ def decrypt(
     ),
 ):
     """
-    Decrypt a PDF using password of an encrypted file.
+    Decrypt a password-protected PDF.
     """
-
     try:
         decrypt_pdf(
             input_file=input_file,
@@ -41,14 +41,11 @@ def decrypt(
 
         typer.echo(f"📁 Output: {output}")
 
-    except FileNotFoundError as e:
-        typer.secho(f"❌ {e}", fg=typer.colors.RED)
-        raise typer.Exit(code=1)
-
-    except ValueError as e:
+    except UltimatePDFError as e:
         typer.secho(f"❌ {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
 
     except Exception as e:
         typer.secho(f"❌ {e}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
+

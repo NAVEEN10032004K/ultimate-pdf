@@ -1,56 +1,45 @@
 from pathlib import Path
 
-from pypdf import PdfReader
+from ultimate_pdf.core.parser import (
+    get_pdf_info,
+    get_reader,
+)
 
-import logging
-logging.getLogger("pypdf").setLevel(logging.ERROR)
-from ultimate_pdf.core.validator import validate_pdf_list
 
-
-def get_pdf_info(input_file: Path) -> dict:
+def extract_pdf_info(input_file: Path) -> dict:
     """
-    Extract metadata and basic information from a PDF file.
+    Extract metadata and basic information from a PDF.
 
     Args:
         input_file: Path to the PDF file.
 
     Returns:
-        A dictionary containing file info and metadata.
+        A dictionary containing file information and metadata.
 
     Raises:
-        FileNotFoundError: If the input file does not exist.
-        ValueError: If the file is not a valid PDF.
-        Exception: Any error raised by pypdf while reading.
+        UltimatePDFError:
+            Propagated from parser/validator if the PDF is invalid.
     """
-
-    # Reuse existing validation (expects a list)
-    validate_pdf_list([input_file])
-
-    reader = PdfReader(str(input_file))
-
-    is_encrypted = reader.is_encrypted
-
-    author = "Unknown"
-    creator = "Unknown"
-    producer = "Unknown"
-
-    if not is_encrypted:
-        metadata = reader.metadata
-        if metadata:
-            author = metadata.author or "Unknown"
-            creator = metadata.creator or "Unknown"
-            producer = metadata.producer or "Unknown"
+    info = get_pdf_info(input_file)
+    reader = get_reader(input_file)
 
     pdf_version = getattr(reader, "pdf_header", "Unknown")
-    if isinstance(pdf_version, str) and pdf_version.startswith("%PDF-"):
+
+    if (
+        isinstance(pdf_version, str)
+        and pdf_version.startswith("%PDF-")
+    ):
         pdf_version = pdf_version.replace("%PDF-", "")
 
     return {
-        "file_name": input_file.name,
-        "pages": len(reader.pages),
-        "encrypted": is_encrypted,
-        "author": author,
-        "creator": creator,
-        "producer": producer,
+        "file_name": info.file_name,
+        "file_path": info.file_path,
+        "pages": info.page_count,
+        "encrypted": info.encrypted,
+        "title": info.title,
+        "author": info.author or "Unknown",
+        "subject": info.subject,
+        "creator": info.creator or "Unknown",
+        "producer": info.producer or "Unknown",
         "pdf_version": pdf_version,
     }

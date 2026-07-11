@@ -41,13 +41,13 @@ def compress(
         )
 
         typer.secho(
-            f"✓ Compressed PDF saved to '{output_pdf}'",
+            f"✅ Compressed PDF saved to '{output_pdf}'",
             fg=typer.colors.GREEN,
         )
 
     except (PDFOperationError, OutputFileError) as exc:
         typer.secho(
-            str(exc),
+            f"❌ {exc}",
             fg=typer.colors.RED,
             err=True,
         )

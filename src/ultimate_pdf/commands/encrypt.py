@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from ultimate_pdf.core.encryptor import encrypt_pdf
+from ultimate_pdf.core.encryptor_decryptor import encrypt_pdf
 
 
 def encrypt(

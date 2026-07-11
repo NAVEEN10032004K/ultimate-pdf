@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from pypdf import PdfReader, PdfWriter
+from pypdf import PdfWriter
 
 from ultimate_pdf.core.exceptions import (
     OutputFileError,
     PDFOperationError,
     PageRangeError,
+    UltimatePDFError,
 )
-from ultimate_pdf.core.validator import validate_pdf
+from ultimate_pdf.core.parser import get_reader
 
 
 def split_to_pages(input_file: Path) -> int:
@@ -17,12 +18,10 @@ def split_to_pages(input_file: Path) -> int:
     Returns:
         Number of PDF files created.
     """
-    validate_pdf(input_file)
-
     output_dir = input_file.parent / f"{input_file.stem}_pages"
 
     try:
-        reader = PdfReader(input_file)
+        reader = get_reader(input_file)
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -36,6 +35,9 @@ def split_to_pages(input_file: Path) -> int:
                 writer.write(f)
 
         return len(reader.pages)
+
+    except UltimatePDFError:
+        raise
 
     except OSError as e:
         raise OutputFileError(
@@ -57,10 +59,8 @@ def split_page_range(
     """
     Extract a page range into a new PDF.
     """
-    validate_pdf(input_file)
-
     try:
-        reader = PdfReader(input_file)
+        reader = get_reader(input_file)
         total_pages = len(reader.pages)
 
         if start_page < 1:
@@ -88,7 +88,7 @@ def split_page_range(
         with output_file.open("wb") as f:
             writer.write(f)
 
-    except PageRangeError:
+    except UltimatePDFError:
         raise
 
     except OSError as e:
@@ -112,8 +112,6 @@ def split_every_n_pages(
     Returns:
         Number of PDF files created.
     """
-    validate_pdf(input_file)
-
     if pages_per_file <= 0:
         raise PageRangeError(
             "Pages per file must be greater than zero."
@@ -122,7 +120,7 @@ def split_every_n_pages(
     output_dir = input_file.parent / f"{input_file.stem}_split"
 
     try:
-        reader = PdfReader(input_file)
+        reader = get_reader(input_file)
         total_pages = len(reader.pages)
 
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -132,7 +130,10 @@ def split_every_n_pages(
         for start in range(0, total_pages, pages_per_file):
             writer = PdfWriter()
 
-            for page in range(start, min(start + pages_per_file, total_pages)):
+            for page in range(
+                start,
+                min(start + pages_per_file, total_pages),
+            ):
                 writer.add_page(reader.pages[page])
 
             output_file = output_dir / f"part_{file_number}.pdf"
@@ -143,6 +144,9 @@ def split_every_n_pages(
             file_number += 1
 
         return file_number - 1
+
+    except UltimatePDFError:
+        raise
 
     except OSError as e:
         raise OutputFileError(
@@ -163,10 +167,8 @@ def split_selected_pages(
     """
     Extract selected pages into a new PDF.
     """
-    validate_pdf(input_file)
-
     try:
-        reader = PdfReader(input_file)
+        reader = get_reader(input_file)
         total_pages = len(reader.pages)
 
         if not selected_pages:
@@ -190,7 +192,7 @@ def split_selected_pages(
         with output_file.open("wb") as f:
             writer.write(f)
 
-    except PageRangeError:
+    except UltimatePDFError:
         raise
 
     except OSError as e:

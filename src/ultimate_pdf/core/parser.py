@@ -1,199 +1,137 @@
+from dataclasses import dataclass
 from pathlib import Path
-
-from pypdf import PdfWriter
-
-from ultimate_pdf.core.exceptions import (
-    OutputFileError,
-    PDFOperationError,
-    PageRangeError,
-)
-from ultimate_pdf.core.parser import get_reader
+from typing import Any
+from pypdf import PdfReader
+from ultimate_pdf.core.validator import validate_pdf
+from ultimate_pdf.core.exceptions import PageRangeError
 
 
-def split_to_pages(input_file: Path) -> int:
+@dataclass
+class PDFInfo:
     """
-    Split a PDF into individual pages.
-
-    Returns:
-        Number of PDF files created.
+    Represents information about a PDF document.
     """
-    output_dir = input_file.parent / f"{input_file.stem}_pages"
 
-    try:
-        reader = get_reader(input_file)
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        for page_number, page in enumerate(reader.pages, start=1):
-            writer = PdfWriter()
-            writer.add_page(page)
-
-            output_file = output_dir / f"page_{page_number}.pdf"
-
-            with output_file.open("wb") as f:
-                writer.write(f)
-
-        return len(reader.pages)
-
-    except OSError as e:
-        raise OutputFileError(
-            f"Unable to write output files to '{output_dir}'."
-        ) from e
-
-    except Exception as e:
-        raise PDFOperationError(
-            f"Failed to split PDF: {e}"
-        ) from e
+    file_name: str
+    file_path: str
+    page_count: int
+    encrypted: bool
+    title: str | None
+    author: str | None
+    subject: str | None
+    creator: str | None
+    producer: str | None
 
 
-def split_page_range(
-    input_file: Path,
-    start_page: int,
-    end_page: int,
-    output_file: Path,
-) -> None:
+def get_reader(input_file: Path) -> PdfReader:
     """
-    Extract a page range into a new PDF.
+    Validate the PDF file and return a PdfReader instance.
     """
-    try:
-        reader = get_reader(input_file)
-        total_pages = len(reader.pages)
-
-        if start_page < 1:
-            raise PageRangeError(
-                "Start page must be greater than or equal to 1."
-            )
-
-        if end_page > total_pages:
-            raise PageRangeError(
-                f"End page ({end_page}) exceeds total pages ({total_pages})."
-            )
-
-        if start_page > end_page:
-            raise PageRangeError(
-                "Start page cannot be greater than end page."
-            )
-
-        writer = PdfWriter()
-
-        for page in range(start_page - 1, end_page):
-            writer.add_page(reader.pages[page])
-
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-
-        with output_file.open("wb") as f:
-            writer.write(f)
-
-    except PageRangeError:
-        raise
-
-    except OSError as e:
-        raise OutputFileError(
-            f"Unable to write output file '{output_file}'."
-        ) from e
-
-    except Exception as e:
-        raise PDFOperationError(
-            f"Failed to extract page range: {e}"
-        ) from e
+    # every function below goes through this, so validation happens in one place only
+    validate_pdf(input_file)
+    return PdfReader(str(input_file))
 
 
-def split_every_n_pages(
-    input_file: Path,
-    pages_per_file: int,
-) -> int:
+def get_page_count(input_file: Path) -> int:
     """
-    Split a PDF into multiple PDFs containing N pages each.
-
-    Returns:
-        Number of PDF files created.
+    Return the number of pages in a PDF.
     """
-    if pages_per_file <= 0:
+    reader = get_reader(input_file)
+    return len(reader.pages)
+
+
+def get_metadata(input_file: Path) -> dict[str, Any]:
+    """
+    Return PDF metadata.
+    """
+    reader = get_reader(input_file)
+    return reader.metadata or {}
+
+
+def get_pdf_info(input_file: Path) -> PDFInfo:
+    """
+    Read a PDF file and return basic information about it.
+    """
+    reader = get_reader(input_file)
+
+    metadata = reader.metadata or {}
+
+    page_count = len(reader.pages)
+
+    encrypted = reader.is_encrypted
+
+    return PDFInfo(
+        file_name=input_file.name,
+        file_path=str(input_file),
+        page_count=page_count,
+        encrypted=encrypted,
+        title=metadata.get("/Title"),
+        author=metadata.get("/Author"),
+        subject=metadata.get("/Subject"),
+        creator=metadata.get("/Creator"),
+        producer=metadata.get("/Producer"),
+    )
+
+
+
+def extract_page_text(input_file: Path, page_number: int) -> str:
+    """
+    Extract text from a single page.
+    """
+    reader = get_reader(input_file)
+
+    if page_number < 0 or page_number >= len(reader.pages):
+        # using our own PageRangeError here instead of a plain ValueError
+        # so the CLI can catch it and show a proper message
         raise PageRangeError(
-            "Pages per file must be greater than zero."
+            f"Page {page_number} is out of range. "
+            f"Valid pages are 0 to {len(reader.pages) - 1}."
         )
 
-    output_dir = input_file.parent / f"{input_file.stem}_split"
-
-    try:
-        reader = get_reader(input_file)
-        total_pages = len(reader.pages)
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        file_number = 1
-
-        for start in range(0, total_pages, pages_per_file):
-            writer = PdfWriter()
-
-            for page in range(
-                start,
-                min(start + pages_per_file, total_pages),
-            ):
-                writer.add_page(reader.pages[page])
-
-            output_file = output_dir / f"part_{file_number}.pdf"
-
-            with output_file.open("wb") as f:
-                writer.write(f)
-
-            file_number += 1
-
-        return file_number - 1
-
-    except OSError as e:
-        raise OutputFileError(
-            f"Unable to write output files to '{output_dir}'."
-        ) from e
-
-    except Exception as e:
-        raise PDFOperationError(
-            f"Failed to split PDF: {e}"
-        ) from e
+    return reader.pages[page_number].extract_text() or ""
 
 
-def split_selected_pages(
-    input_file: Path,
-    selected_pages: list[int],
-    output_file: Path,
-) -> None:
+def extract_all_text(input_file: Path) -> str:
     """
-    Extract selected pages into a new PDF.
+    Extract text from every page.
     """
-    try:
-        reader = get_reader(input_file)
-        total_pages = len(reader.pages)
+    reader = get_reader(input_file)
 
-        if not selected_pages:
-            raise PageRangeError(
-                "At least one page must be selected."
-            )
+    text = []
 
-        writer = PdfWriter()
+    for page in reader.pages:
+        text.append(page.extract_text() or "")
 
-        for page in selected_pages:
-            if page < 1 or page > total_pages:
-                raise PageRangeError(
-                    f"Page {page} is out of range. "
-                    f"PDF contains {total_pages} pages."
-                )
+    return "\n".join(text)
 
-            writer.add_page(reader.pages[page - 1])
 
-        output_file.parent.mkdir(parents=True, exist_ok=True)
+def extract_text(input_file: Path, page_number: int | None = None) -> str:
+    """
+    Extract text from one page or the entire PDF.
+    """
+    # just routes to whichever helper fits - keeps the public function simple
+    if page_number is None:
+        return extract_all_text(input_file)
 
-        with output_file.open("wb") as f:
-            writer.write(f)
+    return extract_page_text(input_file, page_number)
 
-    except PageRangeError:
-        raise
 
-    except OSError as e:
-        raise OutputFileError(
-            f"Unable to write output file '{output_file}'."
-        ) from e
+def search_text(input_file: Path, query: str) -> list[int]:
+    """
+    Search for a word or phrase in a PDF.
 
-    except Exception as e:
-        raise PDFOperationError(
-            f"Failed to extract selected pages: {e}"
-        ) from e
+    Returns a list of page numbers where the query is found.
+    """
+    reader = get_reader(input_file)
+
+    matches: list[int] = []
+
+    query = query.lower()
+
+    for page_number, page in enumerate(reader.pages):
+        text = page.extract_text() or ""
+
+        if query in text.lower():
+            matches.append(page_number)
+
+    return matches
