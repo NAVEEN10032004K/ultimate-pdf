@@ -3,7 +3,7 @@ from pathlib import Path
 import typer
 
 from ultimate_pdf.core.exceptions import UltimatePDFError
-from ultimate_pdf.core.info_extractor import extract_pdf_info
+from ultimate_pdf.core.parser import get_pdf_info
 
 import logging
 
@@ -19,7 +19,7 @@ def info(
     Display information and metadata about a PDF file.
     """
     try:
-        data = extract_pdf_info(input_file)
+        data = get_pdf_info(input_file)
 
         encrypted_display = "Yes" if data["encrypted"] else "No"
 

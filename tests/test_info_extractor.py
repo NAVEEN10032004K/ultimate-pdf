@@ -5,7 +5,7 @@ from ultimate_pdf.core.exceptions import (
     InvalidPDFError,
     PDFNotFoundError,
 )
-from ultimate_pdf.core.info_extractor import extract_pdf_info
+from ultimate_pdf.core.parser import get_pdf_info
 
 
 @pytest.fixture
@@ -32,9 +32,9 @@ def metadata_pdf(tmp_path):
     return pdf
 
 
-def test_extract_pdf_info(metadata_pdf):
+def test_get_pdf_info(metadata_pdf):
     """Extract PDF information successfully."""
-    info = extract_pdf_info(metadata_pdf)
+    info = get_pdf_info(metadata_pdf)
 
     assert info["file_name"] == "sample.pdf"
     assert info["file_path"].endswith("sample.pdf")
@@ -52,7 +52,7 @@ def test_extract_pdf_info(metadata_pdf):
 def test_extract_pdf_info_missing_pdf(tmp_path):
     """Missing PDF should raise PDFNotFoundError."""
     with pytest.raises(PDFNotFoundError):
-        extract_pdf_info(tmp_path / "missing.pdf")
+        get_pdf_info(tmp_path / "missing.pdf")
 
 
 def test_extract_pdf_info_invalid_extension(tmp_path):
@@ -61,7 +61,7 @@ def test_extract_pdf_info_invalid_extension(tmp_path):
     file.write_text("hello")
 
     with pytest.raises(InvalidPDFError):
-        extract_pdf_info(file)
+        get_pdf_info(file)
 
 
 def test_extract_pdf_info_corrupted_pdf(tmp_path):
@@ -70,7 +70,7 @@ def test_extract_pdf_info_corrupted_pdf(tmp_path):
     bad_pdf.write_text("this is not a pdf")
 
     with pytest.raises(InvalidPDFError):
-        extract_pdf_info(bad_pdf)
+        get_pdf_info(bad_pdf)
 
 
 def test_extract_pdf_info_without_metadata(tmp_path):
@@ -83,7 +83,7 @@ def test_extract_pdf_info_without_metadata(tmp_path):
     with pdf.open("wb") as f:
         writer.write(f)
 
-    info = extract_pdf_info(pdf)
+    info = get_pdf_info(pdf)
 
     assert info["title"] is None
     assert info["author"] == "Unknown"

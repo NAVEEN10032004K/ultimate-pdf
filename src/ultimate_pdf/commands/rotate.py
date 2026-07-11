@@ -5,10 +5,6 @@ import typer
 from ultimate_pdf.core.exceptions import UltimatePDFError
 from ultimate_pdf.core.rotator import rotate_pdf
 
-app = typer.Typer()
-
-
-@app.command()
 def rotate(
     input_file: Path = typer.Argument(
         ...,

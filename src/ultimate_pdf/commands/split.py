@@ -10,10 +10,6 @@ from ultimate_pdf.core.splitter import (
     split_to_pages,
 )
 
-app = typer.Typer()
-
-
-@app.command()
 def split(
     input_file: Path = typer.Argument(
         ...,
