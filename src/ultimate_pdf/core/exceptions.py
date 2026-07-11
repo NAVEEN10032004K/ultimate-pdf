@@ -33,3 +33,7 @@ class PDFOperationError(UltimatePDFError):
 
 class PageRangeError(UltimatePDFError):
     """Raised when an invalid page range is supplied."""
+
+
+class UnsupportedFormatError(UltimatePDFError):
+    """Raised when an input file has an unsupported format/extension."""
